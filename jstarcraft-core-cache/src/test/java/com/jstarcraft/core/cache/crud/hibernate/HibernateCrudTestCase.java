@@ -16,21 +16,17 @@ import com.jstarcraft.core.cache.CacheIndex;
 import com.jstarcraft.core.cache.CacheObjectFactory;
 import com.jstarcraft.core.cache.CacheService;
 import com.jstarcraft.core.cache.EntityManager;
-import com.jstarcraft.core.cache.MockEntityObject;
-import com.jstarcraft.core.cache.MockRegionObject;
 import com.jstarcraft.core.cache.RegionManager;
 import com.jstarcraft.core.cache.annotation.CacheAccessor;
 import com.jstarcraft.core.cache.annotation.CacheConfiguration;
-import com.jstarcraft.core.cache.crud.berkeley.BerkeleyEntityObject;
-import com.jstarcraft.core.cache.crud.berkeley.BerkeleyRegionObject;
-import com.jstarcraft.core.orm.OrmAccessor;
+import com.jstarcraft.core.storage.StorageAccessor;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class HibernateCrudTestCase {
 
     @Autowired
-    private OrmAccessor accessor;
+    private StorageAccessor accessor;
 
     @Autowired
     private CacheService cacheService;
@@ -50,11 +46,11 @@ public class HibernateCrudTestCase {
         // 此部分数据最初不加载到缓存
         for (int index = 1; index <= SIZE; index++) {
             HibernateEntityObject entity = HibernateEntityObject.instanceOf(-index, "birdy:" + index, "hong", index, index);
-            accessor.create(HibernateEntityObject.class, entity);
+            accessor.createInstance(HibernateEntityObject.class, entity);
 
             for (int position = 1; position <= SIZE; position++) {
                 HibernateRegionObject region = HibernateRegionObject.instanceOf(-(index * SIZE + position), entity.getId());
-                accessor.create(HibernateRegionObject.class, region);
+                accessor.createInstance(HibernateRegionObject.class, region);
             }
         }
     }
@@ -62,12 +58,12 @@ public class HibernateCrudTestCase {
     @After
     public void afterTest() throws Exception {
         for (int index = 1; index <= SIZE; index++) {
-            accessor.delete(HibernateEntityObject.class, -index);
-            accessor.delete(HibernateEntityObject.class, index);
+            accessor.deleteInstance(HibernateEntityObject.class, -index);
+            accessor.deleteInstance(HibernateEntityObject.class, index);
 
             for (int position = 1; position <= SIZE; position++) {
-                accessor.delete(HibernateRegionObject.class, -(index * SIZE + position));
-                accessor.delete(HibernateRegionObject.class, (index * SIZE + position));
+                accessor.deleteInstance(HibernateRegionObject.class, -(index * SIZE + position));
+                accessor.deleteInstance(HibernateRegionObject.class, (index * SIZE + position));
             }
         }
     }
@@ -131,6 +127,11 @@ public class HibernateCrudTestCase {
         // 测试查询
         Assert.assertThat(entityManager.getInstanceCount(), CoreMatchers.equalTo(SIZE));
         Assert.assertThat(regionManager.getInstanceCount(), CoreMatchers.equalTo(SIZE * SIZE));
+
+        for (int index = 1; index <= SIZE; index++) {
+            entityManager.deleteInstance(-index);
+            Assert.assertNull(entityManager.getInstance(-index));
+        }
 
         cacheService.stop();
     }

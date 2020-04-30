@@ -19,14 +19,14 @@ import com.jstarcraft.core.cache.EntityManager;
 import com.jstarcraft.core.cache.RegionManager;
 import com.jstarcraft.core.cache.annotation.CacheAccessor;
 import com.jstarcraft.core.cache.annotation.CacheConfiguration;
-import com.jstarcraft.core.orm.OrmAccessor;
+import com.jstarcraft.core.storage.StorageAccessor;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class MyBatisCrudTestCase {
 
     @Autowired
-    private OrmAccessor accessor;
+    private StorageAccessor accessor;
 
     @Autowired
     private CacheService cacheService;
@@ -46,11 +46,11 @@ public class MyBatisCrudTestCase {
         // 此部分数据最初不加载到缓存
         for (int index = 1; index <= SIZE; index++) {
             MyBatisEntityObject entity = MyBatisEntityObject.instanceOf(-index, "birdy:" + index, "hong", index, index);
-            accessor.create(MyBatisEntityObject.class, entity);
+            accessor.createInstance(MyBatisEntityObject.class, entity);
 
             for (int position = 1; position <= SIZE; position++) {
                 MyBatisRegionObject region = MyBatisRegionObject.instanceOf(-(index * SIZE + position), entity.getId());
-                accessor.create(MyBatisRegionObject.class, region);
+                accessor.createInstance(MyBatisRegionObject.class, region);
             }
         }
     }
@@ -58,12 +58,12 @@ public class MyBatisCrudTestCase {
     @After
     public void afterTest() throws Exception {
         for (int index = 1; index <= SIZE; index++) {
-            accessor.delete(MyBatisEntityObject.class, -index);
-            accessor.delete(MyBatisEntityObject.class, index);
+            accessor.deleteInstance(MyBatisEntityObject.class, -index);
+            accessor.deleteInstance(MyBatisEntityObject.class, index);
 
             for (int position = 1; position <= SIZE; position++) {
-                accessor.delete(MyBatisRegionObject.class, -(index * SIZE + position));
-                accessor.delete(MyBatisRegionObject.class, (index * SIZE + position));
+                accessor.deleteInstance(MyBatisRegionObject.class, -(index * SIZE + position));
+                accessor.deleteInstance(MyBatisRegionObject.class, (index * SIZE + position));
             }
         }
     }
@@ -127,6 +127,11 @@ public class MyBatisCrudTestCase {
         // 测试查询
         Assert.assertThat(entityManager.getInstanceCount(), CoreMatchers.equalTo(SIZE));
         Assert.assertThat(regionManager.getInstanceCount(), CoreMatchers.equalTo(SIZE * SIZE));
+
+        for (int index = 1; index <= SIZE; index++) {
+            entityManager.deleteInstance(-index);
+            Assert.assertNull(entityManager.getInstance(-index));
+        }
 
         cacheService.stop();
     }

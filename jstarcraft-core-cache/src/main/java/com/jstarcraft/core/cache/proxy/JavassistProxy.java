@@ -5,9 +5,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.jstarcraft.core.cache.CacheInformation;
 import com.jstarcraft.core.cache.annotation.CacheChange;
 import com.jstarcraft.core.cache.exception.CacheException;
@@ -17,16 +17,16 @@ import com.jstarcraft.core.common.identification.IdentityObject;
 import com.jstarcraft.core.common.reflection.ReflectionUtility;
 import com.jstarcraft.core.utility.StringUtility;
 
+import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtConstructor;
 import javassist.CtField;
-import javassist.CtMethod;
 import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ConstPool;
-import javassist.bytecode.Descriptor;
-import javassist.bytecode.MethodInfo;
+import javassist.bytecode.FieldInfo;
+import javassist.bytecode.annotation.Annotation;
 
 /**
  * 代理转换器
@@ -37,7 +37,7 @@ import javassist.bytecode.MethodInfo;
 abstract class JavassistProxy implements ProxyTransformer {
 
     /** 类:代理后缀 */
-    protected final static String CLASS_SUFFIX = "$PROXY";
+    protected final static String CLASS_SUFFIX = "_PROXY";
 
     /** 字段:引用代理缓存管理 */
     protected final static String FIELD_MANAGER = "_manager";
@@ -166,6 +166,7 @@ abstract class JavassistProxy implements ProxyTransformer {
      * @throws Exception
      */
     private CtClass proxyClass(Class<?> clazz) throws Exception {
+        classPool.insertClassPath(new ClassClassPath(clazz));
         CtClass source = classPool.get(clazz.getName());
         CtClass result = classPool.makeClass(clazz.getCanonicalName() + CLASS_SUFFIX);
         result.setSuperclass(source);
@@ -211,13 +212,23 @@ abstract class JavassistProxy implements ProxyTransformer {
      * @throws Exception
      */
     private void proxyCacheFields(Class<?> clazz, CtClass proxyClass) throws Exception {
+        ConstPool constPool = proxyClass.getClassFile2().getConstPool();
         CtField managerField = new CtField(classPool.get(ProxyManager.class.getName()), FIELD_MANAGER, proxyClass);
-        managerField.setModifiers(Modifier.PRIVATE + Modifier.FINAL);
-        proxyClass.addField(managerField);
-
         CtField informationField = new CtField(classPool.get(CacheInformation.class.getName()), FIELD_INFORMATION, proxyClass);
-        informationField.setModifiers(Modifier.PRIVATE + Modifier.FINAL);
-        proxyClass.addField(informationField);
+
+        List<CtField> fields = Arrays.asList(managerField, informationField);
+        List<String> types = Arrays.asList("javax.persistence.Transient", "org.springframework.data.annotation.Transient");
+        for (CtField field : fields) {
+            field.setModifiers(Modifier.PRIVATE + Modifier.FINAL + Modifier.TRANSIENT);
+            FieldInfo fieldInfo = field.getFieldInfo();
+            for (String type : types) {
+                AnnotationsAttribute annotationsAttribute = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
+                Annotation annotation = new Annotation(type, constPool);
+                annotationsAttribute.addAnnotation(annotation);
+                fieldInfo.addAttribute(annotationsAttribute);
+            }
+            proxyClass.addField(field);
+        }
     }
 
     /**

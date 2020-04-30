@@ -13,11 +13,10 @@ import org.slf4j.LoggerFactory;
 import com.jstarcraft.core.cache.CacheInformation;
 import com.jstarcraft.core.cache.CacheState;
 import com.jstarcraft.core.cache.persistence.PersistenceStrategy.PersistenceOperation;
-import com.jstarcraft.core.cache.proxy.ProxyObject;
 import com.jstarcraft.core.common.identification.IdentityObject;
 import com.jstarcraft.core.common.reflection.ReflectionUtility;
-import com.jstarcraft.core.orm.OrmAccessor;
-import com.jstarcraft.core.orm.OrmCondition;
+import com.jstarcraft.core.storage.StorageAccessor;
+import com.jstarcraft.core.storage.StorageCondition;
 import com.jstarcraft.core.utility.StringUtility;
 
 /**
@@ -35,10 +34,20 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
     /** 类型 */
     private Class cacheClass;
 
+    protected ThreadLocal<T> copyInstances = new ThreadLocal<T>() {
+
+        @Override
+        protected T initialValue() {
+            T instance = (T) information.getCacheInstance();
+            return instance;
+        }
+
+    };
+
     /** 读写锁 */
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     /** ORM访问器 */
-    private OrmAccessor accessor;
+    private StorageAccessor accessor;
     /** 缓存类型信息 */
     private CacheInformation information;
     /** 状态 */
@@ -54,7 +63,7 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
     /** 异常统计 */
     private final AtomicLong exceptionCount = new AtomicLong();
 
-    PromptPersistenceManager(String name, Class cacheClass, OrmAccessor accessor, CacheInformation information, AtomicReference<CacheState> state) {
+    PromptPersistenceManager(String name, Class cacheClass, StorageAccessor accessor, CacheInformation information, AtomicReference<CacheState> state) {
         this.name = name;
         this.cacheClass = cacheClass;
         this.accessor = accessor;
@@ -67,7 +76,7 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
         Lock readLock = lock.readLock();
         try {
             readLock.lock();
-            T value = (T) accessor.get(cacheClass, cacheId);
+            T value = (T) accessor.getInstance(cacheClass, cacheId);
             return value;
         } finally {
             readLock.unlock();
@@ -79,7 +88,7 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
         Lock readLock = lock.readLock();
         try {
             readLock.lock();
-            Map<K, Object> values = accessor.queryIdentities(cacheClass, OrmCondition.Equal, indexName, indexValue);
+            Map<K, Object> values = accessor.queryIdentities(cacheClass, StorageCondition.Equal, indexName, indexValue);
             return values;
         } finally {
             readLock.unlock();
@@ -91,7 +100,7 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
         Lock readLock = lock.readLock();
         try {
             readLock.lock();
-            List<T> values = accessor.queryInstances(cacheClass, OrmCondition.Equal, indexName, indexValue);
+            List<T> values = accessor.queryInstances(cacheClass, StorageCondition.Equal, indexName, indexValue);
             return values;
         } finally {
             readLock.unlock();
@@ -106,10 +115,12 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
         PersistenceElement element = new PersistenceElement(PersistenceOperation.CREATE, cacheObject.getId(), cacheObject);
         Exception exception = null;
         synchronized (cacheObject) {
+            T copyInstance = copyInstances.get();
+            ReflectionUtility.copyInstance(element.getCacheObject(), copyInstance);
             Lock writeLock = lock.writeLock();
             try {
                 writeLock.lock();
-                accessor.create(cacheClass, element.getCacheObject());
+                accessor.createInstance(cacheClass, copyInstance);
                 createdCount.incrementAndGet();
             } catch (Exception throwable) {
                 String message = StringUtility.format("立即策略[{}]处理元素[{}]时异常", new Object[] { name, element });
@@ -133,7 +144,7 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
         Lock writeLock = lock.writeLock();
         try {
             writeLock.lock();
-            accessor.delete(cacheClass, element.getCacheId());
+            accessor.deleteInstance(cacheClass, element.getCacheId());
             deletedCount.incrementAndGet();
         } catch (Exception throwable) {
             String message = StringUtility.format("立即策略[{}]处理元素[{}]时异常", new Object[] { name, element });
@@ -154,15 +165,15 @@ public class PromptPersistenceManager<K extends Comparable, T extends IdentityOb
 //		if (cacheObject instanceof ProxyObject) {
 //			cacheObject = ((ProxyObject) cacheObject).getInstance();
 //		}
-        IdentityObject identityObject = information.getCacheInstance();
         PersistenceElement element = new PersistenceElement(PersistenceOperation.UPDATE, cacheObject.getId(), cacheObject);
         Exception exception = null;
         synchronized (cacheObject) {
+            T copyInstance = copyInstances.get();
+            ReflectionUtility.copyInstance(element.getCacheObject(), copyInstance);
             Lock writeLock = lock.writeLock();
             try {
                 writeLock.lock();
-                ReflectionUtility.copyInstance(element.getCacheObject(), identityObject);
-                accessor.update(cacheClass, identityObject);
+                accessor.updateInstance(cacheClass, copyInstance);
                 updatedCount.incrementAndGet();
             } catch (Exception throwable) {
                 String message = StringUtility.format("立即策略[{}]处理元素[{}]时异常", new Object[] { name, element });

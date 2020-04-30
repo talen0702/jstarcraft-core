@@ -1,0 +1,28 @@
+一种用于 API 的查询语言:
+https://graphql.cn
+
+RPC vs REST vs GraphQL:
+https://segmentfault.com/a/1190000013961872
+30分钟理解GraphQL核心概念:
+https://segmentfault.com/a/1190000014131950
+
+5个用/不用GraphQL的理由:
+https://www.jianshu.com/p/12dff5905cf6
+
+GraphQL从入门到放弃:
+https://xeblog.cn/articles/6
+
+GraphQL Java从入门到实践:
+https://www.jianshu.com/p/4ede220b713e
+
+GraphQL Java Documentation:
+https://www.graphql-java.com/documentation/master/
+
+Getting started with GraphQL Java and Spring Boot:
+https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/
+
+A strongly-typed, caching GraphQL client for Android and the JVM:
+https://github.com/apollographql/apollo-android
+
+A GraphQL JVM Client - Java, Kotlin, Scala:
+https://github.com/americanexpress/nodes

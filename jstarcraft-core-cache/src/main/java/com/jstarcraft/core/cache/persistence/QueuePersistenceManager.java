@@ -23,8 +23,8 @@ import com.jstarcraft.core.cache.persistence.PersistenceStrategy.PersistenceOper
 import com.jstarcraft.core.cache.proxy.ProxyObject;
 import com.jstarcraft.core.common.identification.IdentityObject;
 import com.jstarcraft.core.common.reflection.ReflectionUtility;
-import com.jstarcraft.core.orm.OrmAccessor;
-import com.jstarcraft.core.orm.OrmCondition;
+import com.jstarcraft.core.storage.StorageAccessor;
+import com.jstarcraft.core.storage.StorageCondition;
 import com.jstarcraft.core.utility.StringUtility;
 
 /**
@@ -41,8 +41,17 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
     private String name;
     /** 类型 */
     private Class cacheClass;
+    
+    protected ThreadLocal<T> copyInstances = new ThreadLocal<T>() {
 
-    private IdentityObject identityObject;
+        @Override
+        protected T initialValue() {
+            T instance = (T) information.getCacheInstance();
+            return instance;
+        }
+
+    };
+
     /** 更新队列 */
     private BlockingQueue<PersistenceElement> elementQueue;
 
@@ -52,7 +61,7 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
     private ConcurrentHashMap<Object, PersistenceElement> elements = new ConcurrentHashMap<>();
 
     /** ORM访问器 */
-    private OrmAccessor accessor;
+    private StorageAccessor accessor;
     /** 缓存类型信息 */
     private CacheInformation information;
     /** 状态 */
@@ -68,10 +77,9 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
     /** 异常统计 */
     private final AtomicLong exceptionCount = new AtomicLong();
 
-    QueuePersistenceManager(String name, Class cacheClass, OrmAccessor accessor, CacheInformation information, AtomicReference<CacheState> state, int size) {
+    QueuePersistenceManager(String name, Class cacheClass, StorageAccessor accessor, CacheInformation information, AtomicReference<CacheState> state, int size) {
         this.name = name;
         this.cacheClass = cacheClass;
-        this.identityObject = information.getCacheInstance();
         this.accessor = accessor;
         this.information = information;
         this.state = state;
@@ -95,7 +103,7 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
                     return (T) element.getCacheObject();
                 }
             }
-            T value = (T) accessor.get(cacheClass, cacheId);
+            T value = (T) accessor.getInstance(cacheClass, cacheId);
             return value;
         } finally {
             readLock.unlock();
@@ -107,7 +115,7 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
         Lock readLock = waitForLock.readLock();
         try {
             readLock.lock();
-            Map<K, Object> values = accessor.queryIdentities(cacheClass, OrmCondition.Equal, indexName, indexValue);
+            Map<K, Object> values = accessor.queryIdentities(cacheClass, StorageCondition.Equal, indexName, indexValue);
             for (PersistenceElement element : elements.values()) {
                 if (element.getOperation().equals(PersistenceOperation.CREATE)) {
                     Object value = information.getIndexValue(element.getCacheObject(), indexName);
@@ -136,7 +144,7 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
         Lock readLock = waitForLock.readLock();
         try {
             readLock.lock();
-            List<T> values = accessor.queryInstances(cacheClass, OrmCondition.Equal, indexName, indexValue);
+            List<T> values = accessor.queryInstances(cacheClass, StorageCondition.Equal, indexName, indexValue);
 
             Map<K, T> instances = new HashMap<>();
             for (T value : values) {
@@ -291,6 +299,7 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
                 }
                 cacheId = element.getCacheId();
                 Object instance = element.getCacheObject();
+                T copyInstance = copyInstances.get();
                 synchronized (instance == null ? Thread.currentThread() : instance) {
                     Lock writeLock = waitForLock.writeLock();
                     try {
@@ -304,16 +313,17 @@ public class QueuePersistenceManager<K extends Comparable, T extends IdentityObj
 
                         switch (element.getOperation()) {
                         case CREATE:
-                            accessor.create(cacheClass, element.getCacheObject());
+                            ReflectionUtility.copyInstance(element.getCacheObject(), copyInstance);
+                            accessor.createInstance(cacheClass, copyInstance);
                             createdCount.incrementAndGet();
                             break;
                         case DELETE:
-                            accessor.delete(cacheClass, element.getCacheId());
+                            accessor.deleteInstance(cacheClass, element.getCacheId());
                             deletedCount.incrementAndGet();
                             break;
                         case UPDATE:
-                            ReflectionUtility.copyInstance(element.getCacheObject(), identityObject);
-                            accessor.update(cacheClass, identityObject);
+                            ReflectionUtility.copyInstance(element.getCacheObject(), copyInstance);
+                            accessor.updateInstance(cacheClass, copyInstance);
                             updatedCount.incrementAndGet();
                             break;
                         default:

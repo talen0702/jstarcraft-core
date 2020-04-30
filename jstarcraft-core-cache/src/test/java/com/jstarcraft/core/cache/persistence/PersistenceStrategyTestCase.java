@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.jstarcraft.core.cache.CacheInformation;
 import com.jstarcraft.core.cache.MockEntityObject;
-import com.jstarcraft.core.orm.OrmAccessor;
+import com.jstarcraft.core.storage.StorageAccessor;
 import com.jstarcraft.core.utility.StringUtility;
 
 public abstract class PersistenceStrategyTestCase {
@@ -21,7 +21,7 @@ public abstract class PersistenceStrategyTestCase {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    protected OrmAccessor accessor;
+    protected StorageAccessor accessor;
 
     protected Map<Class<?>, CacheInformation> cacheInformations = new HashMap<>();
 
@@ -29,15 +29,15 @@ public abstract class PersistenceStrategyTestCase {
         cacheInformations.put(MockEntityObject.class, CacheInformation.instanceOf(MockEntityObject.class));
     }
 
-    protected abstract PersistenceConfiguration getPersistenceConfiguration();
+    protected abstract Map<String, String> getPersistenceConfiguration();
 
-    protected abstract PersistenceStrategy getPersistenceStrategy();
+    protected abstract PersistenceStrategy getPersistenceStrategy(String name, Map<String, String> configuration);
 
     @Test
     public void testPerformance() throws Exception {
         int size = 10000;
-        PersistenceStrategy strategy = getPersistenceStrategy();
-        strategy.start(accessor, cacheInformations, getPersistenceConfiguration());
+        PersistenceStrategy strategy = getPersistenceStrategy("strategy", getPersistenceConfiguration());
+        strategy.start(accessor, cacheInformations);
         PersistenceManager<Integer, MockEntityObject> manager = strategy.getPersistenceManager(MockEntityObject.class);
 
         // 创建数据
@@ -111,8 +111,8 @@ public abstract class PersistenceStrategyTestCase {
     @Test
     public void testQuery() throws Exception {
         int size = 10000;
-        PersistenceStrategy strategy = getPersistenceStrategy();
-        strategy.start(accessor, cacheInformations, getPersistenceConfiguration());
+        PersistenceStrategy strategy = getPersistenceStrategy("strategy", getPersistenceConfiguration());
+        strategy.start(accessor, cacheInformations);
         PersistenceManager<Integer, MockEntityObject> manager = strategy.getPersistenceManager(MockEntityObject.class);
 
         synchronized (accessor) {
@@ -177,8 +177,8 @@ public abstract class PersistenceStrategyTestCase {
 
     @Test
     public void testUpdate() throws Exception {
-        PersistenceStrategy strategy = getPersistenceStrategy();
-        strategy.start(accessor, cacheInformations, getPersistenceConfiguration());
+        PersistenceStrategy strategy = getPersistenceStrategy("strategy", getPersistenceConfiguration());
+        strategy.start(accessor, cacheInformations);
         PersistenceManager<Integer, MockEntityObject> manager = strategy.getPersistenceManager(MockEntityObject.class);
 
         MockEntityObject object = MockEntityObject.instanceOf(0, "birdy", "hong", 1, -1);
@@ -187,11 +187,11 @@ public abstract class PersistenceStrategyTestCase {
         manager.updateInstance(object);
 
         strategy.stop();
-        object = accessor.get(MockEntityObject.class, 0);
+        object = accessor.getInstance(MockEntityObject.class, 0);
         Assert.assertThat(object.getLastName(), CoreMatchers.equalTo("洪"));
         Assert.assertThat(object.getMoney(), CoreMatchers.equalTo(0));
 
-        accessor.delete(MockEntityObject.class, 0);
+        accessor.deleteInstance(MockEntityObject.class, 0);
     }
 
 }

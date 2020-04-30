@@ -6,8 +6,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import com.jstarcraft.core.orm.mongo.MongoAccessor;
-import com.jstarcraft.core.orm.mongo.MongoMetadata;
+import com.jstarcraft.core.storage.mongo.MongoAccessor;
+import com.jstarcraft.core.storage.mongo.MongoMetadata;
 import com.jstarcraft.core.transaction.TransactionDefinition;
 import com.jstarcraft.core.transaction.TransactionManager;
 import com.jstarcraft.core.transaction.exception.TransactionLockException;
@@ -39,7 +39,7 @@ public class MongoTransactionManager extends TransactionManager {
         for (String name : names) {
             try {
                 MongoTransactionDefinition definition = new MongoTransactionDefinition(name, now);
-                accessor.create(MongoTransactionDefinition.class, definition);
+                accessor.createInstance(MongoTransactionDefinition.class, definition);
                 count++;
             } catch (Exception exception) {
             }
@@ -57,7 +57,7 @@ public class MongoTransactionManager extends TransactionManager {
         int count = 0;
         for (String name : names) {
             try {
-                accessor.delete(MongoTransactionDefinition.class, name);
+                accessor.deleteInstance(MongoTransactionDefinition.class, name);
                 count++;
             } catch (Exception exception) {
             }

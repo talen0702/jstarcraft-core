@@ -16,16 +16,14 @@ import java.util.List;
 public class NestRouteStrategy implements RouteStrategy {
 
     /** 上下文 */
-    private ThreadLocal<LinkedList<String>> contexts = new ThreadLocal<>();
+    private ThreadLocal<LinkedList<String>> contexts = new ThreadLocal<LinkedList<String>>() {
 
-    private LinkedList<String> getContext() {
-        LinkedList<String> context = contexts.get();
-        if (context == null) {
-            context = new LinkedList<>();
-            contexts.set(context);
+        @Override
+        protected LinkedList<String> initialValue() {
+            return new LinkedList<>();
         }
-        return context;
-    }
+
+    };
 
     /**
      * 推入数据键
@@ -33,7 +31,7 @@ public class NestRouteStrategy implements RouteStrategy {
      * @param key
      */
     public void pushKey(String key) {
-        LinkedList<String> context = getContext();
+        LinkedList<String> context = contexts.get();
         context.addLast(key);
     }
 
@@ -41,13 +39,13 @@ public class NestRouteStrategy implements RouteStrategy {
      * 拉出数据键
      */
     public void pullKey() {
-        LinkedList<String> context = getContext();
+        LinkedList<String> context = contexts.get();
         context.removeLast();
     }
 
     @Override
     public String chooseDataSource(List<String> keys) {
-        LinkedList<String> context = getContext();
+        LinkedList<String> context = contexts.get();
         return context.peekLast();
     }
 

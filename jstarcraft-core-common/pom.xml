@@ -23,6 +23,13 @@
             <artifactId>jaxb-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>jdk.tools</groupId>
+            <artifactId>jdk.tools</artifactId>
+        </dependency>
+
+        <!-- JStarCraft框架依赖 -->
+
         <!-- 切面框架依赖 -->
         <dependency>
             <groupId>org.aspectj</groupId>
@@ -101,6 +108,11 @@
         <dependency>
             <groupId>com.cronutils</groupId>
             <artifactId>cron-utils</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
         </dependency>
 
         <!-- 测试框架依赖 -->

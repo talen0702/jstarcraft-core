@@ -25,6 +25,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.text.StringEscapeUtils;
 
+import com.jstarcraft.core.common.conversion.ConversionUtility;
 import com.jstarcraft.core.common.conversion.csv.annotation.CsvConfiguration;
 import com.jstarcraft.core.common.reflection.ReflectionUtility;
 import com.jstarcraft.core.common.reflection.TypeUtility;
@@ -413,7 +414,7 @@ public class CsvUtility {
     }
 
     /**
-     * 对字符串执行CSV转义
+     * 对字符串执行CSV加密
      * 
      * @param string
      * @return
@@ -423,7 +424,7 @@ public class CsvUtility {
     }
 
     /**
-     * 对字符串执行CSV翻译
+     * 对字符串执行CSV解密
      * 
      * @param string
      * @return

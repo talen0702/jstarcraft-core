@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cache="http://www.jstarcraft.com/core/cache" xmlns:berkeley="http://www.jstarcraft.com/core/orm/berkeley"
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cache="http://www.jstarcraft.com/core/cache" xmlns:berkeley="http://www.jstarcraft.com/core/storage/berkeley"
     xsi:schemaLocation="
 http://www.springframework.org/schema/beans
 http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -13,8 +13,8 @@ http://www.springframework.org/schema/tx
 http://www.springframework.org/schema/tx/spring-tx.xsd
 http://www.jstarcraft.com/core/cache
 http://www.jstarcraft.com/core/cache/cache.xsd
-http://www.jstarcraft.com/core/orm/berkeley
-http://www.jstarcraft.com/core/orm/berkeley/berkeley.xsd">
+http://www.jstarcraft.com/core/storage/berkeley
+http://www.jstarcraft.com/core/storage/berkeley/berkeley.xsd">
 
     <!-- 自动包扫描配置 -->
     <context:component-scan base-package="com.jstarcraft.core.cache.crud.berkeley" />
@@ -27,10 +27,29 @@ http://www.jstarcraft.com/core/orm/berkeley/berkeley.xsd">
     </berkeley:configuration>
 
     <!-- 缓存配置 -->
+    <bean id="lruMemoryStrategy" class="com.jstarcraft.core.cache.transience.LeastRecentlyUsedTransienceStrategy">
+        <constructor-arg value="lruMemoryStrategy" />
+        <constructor-arg>
+            <map>
+                <entry key="minimunSize" value-type="java.lang.Integer" value="16"></entry>
+                <entry key="maximunSize" value-type="java.lang.Integer" value="100"></entry>
+                <entry key="concurrencyLevel" value-type="java.lang.Integer" value="10"></entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <bean id="promptPersistenceStrategy" class="com.jstarcraft.core.cache.persistence.PromptPersistenceStrategy">
+        <constructor-arg value="promptPersistenceStrategy" />
+        <constructor-arg>
+            <map>
+            </map>
+        </constructor-arg>
+    </bean>
+
     <cache:configuration id="cacheService">
         <cache:accessor reference="accessor" />
-        <cache:transienceStrategy name="lruMemoryStrategy" type="LEAST_RECENTLY_USED" parameters="{&quot;minimunSize&quot;:&quot;16&quot;,&quot;maximunSize&quot;:&quot;100&quot;,&quot;concurrencyLevel&quot;:&quot;10&quot;}" />
-        <cache:persistenceStrategy name="promptPersistenceStrategy" type="PROMPT" parameters="{}" />
+        <cache:transienceStrategy reference="lruMemoryStrategy" />
+        <cache:persistenceStrategy reference="promptPersistenceStrategy" />
         <cache:scan>
             <cache:package name="com.jstarcraft.core.cache.crud.berkeley" />
         </cache:scan>

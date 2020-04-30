@@ -1,3 +1,9 @@
+JSR 223 在各种语言的实现(JSR 223 compliant scripting languages):
+https://www.oschina.net/question/101596_83486
+
+List of JVM languages:
+https://en.wikipedia.org/wiki/List_of_JVM_languages
+
 一篇文档掌握Jdk8中Javascript引擎Nashorn的使用方法:
 https://www.cnblogs.com/cynchanpin/p/6927278.html
 
@@ -30,3 +36,24 @@ https://bbs.csdn.net/topics/391865152
 
 可爱的 Jython:
 https://www.oschina.net/question/12_4825
+
+JRuby——Java和Ruby的强强联合:
+https://www.cnblogs.com/skyme/archive/2012/08/18/2637417.html
+
+Calling Java from JRuby:
+https://github.com/jruby/jruby/wiki/CallingJavaFromJRuby
+
+Ruby 教程:
+https://www.runoob.com/ruby/ruby-tutorial.html
+
+Ruby 101:
+https://www.cnblogs.com/allenlooplee/category/211768.html
+
+Ruby 包管理分析:
+https://ruby-china.org/topics/29475
+
+Ruby别名与方法取消(undef,remove_method):
+https://www.imooc.com/article/26538
+
+Ruby 中 alias vs alias_method:
+https://www.jianshu.com/p/cebbdf6d5672

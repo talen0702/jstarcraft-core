@@ -1,0 +1,4 @@
+http\://www.jstarcraft.com/core/storage/berkeley/berkeley.xsd=com/jstarcraft/core/storage/berkeley/schema/berkeley.xsd
+http\://www.jstarcraft.com/core/storage/lucene/lucene.xsd=com/jstarcraft/core/storage/lucene/schema/lucene.xsd
+http\://www.jstarcraft.com/core/storage/mongo/mongo.xsd=com/jstarcraft/core/storage/mongo/schema/mongo.xsd
+http\://www.jstarcraft.com/core/storage/mybatis/mybatis.xsd=com/jstarcraft/core/storage/mybatis/schema/mybatis.xsd

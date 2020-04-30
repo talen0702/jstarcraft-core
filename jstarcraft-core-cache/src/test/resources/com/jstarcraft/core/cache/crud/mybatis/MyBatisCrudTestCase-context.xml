@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cache="http://www.jstarcraft.com/core/cache" xmlns:mybatis="http://www.jstarcraft.com/core/orm/mybatis"
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util" xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:cache="http://www.jstarcraft.com/core/cache" xmlns:mybatis="http://www.jstarcraft.com/core/storage/mybatis"
     xsi:schemaLocation="
 http://www.springframework.org/schema/beans
 http://www.springframework.org/schema/beans/spring-beans.xsd
@@ -13,8 +13,8 @@ http://www.springframework.org/schema/tx
 http://www.springframework.org/schema/tx/spring-tx.xsd
 http://www.jstarcraft.com/core/cache
 http://www.jstarcraft.com/core/cache/cache.xsd
-http://www.jstarcraft.com/core/orm/mybatis
-http://www.jstarcraft.com/core/orm/mybatis/mybatis.xsd">
+http://www.jstarcraft.com/core/storage/mybatis
+http://www.jstarcraft.com/core/storage/mybatis/mybatis.xsd">
 
     <!-- 配置文件配置 -->
     <bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -73,7 +73,7 @@ http://www.jstarcraft.com/core/orm/mybatis/mybatis.xsd">
     <tx:annotation-driven transaction-manager="transactionManager" />
 
     <!-- Hibernate配置 -->
-    <bean id="physicalNamingStrategy" class="com.jstarcraft.core.orm.hibernate.Camel2SnakeStrategy">
+    <bean id="physicalNamingStrategy" class="com.jstarcraft.core.storage.hibernate.Camel2SnakeStrategy">
     </bean>
 
     <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
@@ -93,10 +93,29 @@ http://www.jstarcraft.com/core/orm/mybatis/mybatis.xsd">
     </bean>
 
     <!-- 缓存配置 -->
+    <bean id="lruMemoryStrategy" class="com.jstarcraft.core.cache.transience.LeastRecentlyUsedTransienceStrategy">
+        <constructor-arg value="lruMemoryStrategy" />
+        <constructor-arg>
+            <map>
+                <entry key="minimunSize" value-type="java.lang.Integer" value="16"></entry>
+                <entry key="maximunSize" value-type="java.lang.Integer" value="100"></entry>
+                <entry key="concurrencyLevel" value-type="java.lang.Integer" value="10"></entry>
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <bean id="promptPersistenceStrategy" class="com.jstarcraft.core.cache.persistence.PromptPersistenceStrategy">
+        <constructor-arg value="promptPersistenceStrategy" />
+        <constructor-arg>
+            <map>
+            </map>
+        </constructor-arg>
+    </bean>
+
     <cache:configuration id="cacheService">
         <cache:accessor reference="accessor" />
-        <cache:transienceStrategy name="lruMemoryStrategy" type="LEAST_RECENTLY_USED" parameters="{&quot;minimunSize&quot;:&quot;16&quot;,&quot;maximunSize&quot;:&quot;100&quot;,&quot;concurrencyLevel&quot;:&quot;10&quot;}" />
-        <cache:persistenceStrategy name="promptPersistenceStrategy" type="PROMPT" parameters="{}" />
+        <cache:transienceStrategy reference="lruMemoryStrategy" />
+        <cache:persistenceStrategy reference="promptPersistenceStrategy" />
         <cache:scan>
             <cache:package name="com.jstarcraft.core.cache.crud.mybatis" />
         </cache:scan>

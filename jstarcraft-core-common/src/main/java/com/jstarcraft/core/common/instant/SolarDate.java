@@ -1,6 +1,7 @@
 package com.jstarcraft.core.common.instant;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * 阳历日期
@@ -8,14 +9,26 @@ import java.time.LocalDate;
  * @author Birdy
  *
  */
-public class SolarDate {
+public class SolarDate implements CalendarDate {
 
     private LocalDate date;
 
+    /**
+     * 通过标准日期获取阳历日期
+     * 
+     * @param date
+     */
     public SolarDate(LocalDate date) {
         this.date = date;
     }
 
+    /**
+     * 通过年,月,日获取阳历日期
+     * 
+     * @param year
+     * @param month
+     * @param day
+     */
     public SolarDate(int year, int month, int day) {
         // 防止由于月份超过12导致的异常
         if (month > 12) {
@@ -28,11 +41,17 @@ public class SolarDate {
         this.date = LocalDate.of(year, month, day);
     }
 
+    @Override
+    public CalendarType getType() {
+        return CalendarType.Solar;
+    }
+
     /**
      * 获取阳历年
      * 
      * @return
      */
+    @Override
     public int getYear() {
         return date.getYear();
     }
@@ -42,6 +61,7 @@ public class SolarDate {
      * 
      * @return
      */
+    @Override
     public int getMonth() {
         return date.getMonthValue();
     }
@@ -51,6 +71,7 @@ public class SolarDate {
      * 
      * @return
      */
+    @Override
     public int getDay() {
         return date.getDayOfMonth();
     }
@@ -60,29 +81,19 @@ public class SolarDate {
      * 
      * @return
      */
+    @Override
     public boolean isLeap() {
         return date.isLeapYear();
     }
 
+    @Override
     public LocalDate getDate() {
         return date;
     }
 
-    /**
-     * 阳历转阴历
-     * 
-     * @return
-     */
-    public LunarDate getLunar() {
-        return new LunarDate(date);
-    }
-
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int hash = 1;
-        hash = prime * hash + ((date == null) ? 0 : date.hashCode());
-        return hash;
+        return Objects.hash(date);
     }
 
     @Override
@@ -94,12 +105,7 @@ public class SolarDate {
         if (getClass() != object.getClass())
             return false;
         SolarDate that = (SolarDate) object;
-        if (this.date == null) {
-            if (that.date != null)
-                return false;
-        } else if (!this.date.equals(that.date))
-            return false;
-        return true;
+        return Objects.equals(this.date, that.date);
     }
 
     @Override
